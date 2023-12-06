@@ -1,74 +1,54 @@
-import React,{useState,useEffect} from 'react';
-import axios from 'axios';
-let config = {
-    headers: {
-      Authorization: `Bearer ${process.env.REACT_APP_YELP_API_KEY}`,
-      'Access-Control-Allow-Origin' : '*',
-    },
-    params: {
-      term: 'Tourists Must See List', 
-//term to search locations by
-      raduis: 0.5, 
-      latitude: 40.7050758, 
-      longitude: -74.0091604, 
-// for lat/long we are searching locations by proximity of users location which is the location from geolocation api
-      sort_by: 'distance', 
-//can sort by best_match, rating, review_count or distance    
+    import React, { useState } from 'react';
+    import axios from 'axios';
+    import { Map, Marker } from "pigeon-maps" 
 
-      limit: 5, 
-//the amount of location markers you want to show
-    },
-  };
+    const Finder = () => {
+      const [latitude, setLatitude] = useState(-27.465);
+      const [longitude, setLongitude] = useState(153.023);
+      const [showMap, setShowMap] = useState(false);
 
+      async function fetchData() {
+        const { latitude: userLatitude, longitude: userLongitude } = await getUserLocation();
+        setLatitude(userLatitude);
+        setLongitude(userLongitude);
+        setShowMap(true);
 
-let getLocation = () => {
-    return new Promise((resolve, reject) => {
-      navigator.geolocation.getCurrentPosition(
-        position => {
-          let newOrigin = {
-            latitude: position.coords.latitude,
-            longitude: position.coords.longitude,
-          };
-          config.params.latitude = newOrigin.latitude;
-          config.params.longitude = newOrigin.longitude;
-this.setState({
-            origin: newOrigin,
-          });
-          resolve(true);
-        },
-        err => {
-          console.log('error');
-          console.log(err);
-          reject(reject);
-        },
-        { enableHighAccuracy: true, timeout: 2000, maximumAge: 1000 }
-      );
-    });
-  };
-  let fetchMarkerData = () => {
-    return axios
-      .get('https://api.yelp.com/v3/businesses/search', config)
-      .then(responseJson => {
-        this.setState({
-          isLoading: false,
-          markers: responseJson.data.businesses.map(x => x),
+        const res = await axios.get(`http://worker-odd-snow-b170.danielheinrichemail.workers.dev/?term=korean&raduis=5000&latitude=${userLatitude}&longitude=${userLongitude}&sort_by=distance&limit=50`);
+        return res;
+      }
+      
+      function getUserLocation() {
+        return new Promise((resolve, reject) => {
+          if (navigator.geolocation) {
+            navigator.geolocation.requestAuthorization();
+            navigator.geolocation.getCurrentPosition(
+              (position) => {
+                const { latitude, longitude } = position.coords;
+                resolve({ latitude, longitude });
+              },
+              (error) => {
+                reject(error);
+              }
+            );
+          } else {
+            reject(new Error("Geolocation is not supported by this browser."));
+          }
         });
-      })
-      .catch(error => {
-        console.log(error);
-      });
-  }
-
+      }
   
 
-const Finder = () => {
-   
-    return (
-        <div className="flex items-center justify-center sm:justify-start">
-            <p className="flex-1 text-center sm:text-left">Hello Earth</p>
-       
+      return (
+        <div className="flex items-center justify-center h-screen" style={{ backgroundImage: "url('https://external-content.duckduckgo.com/iu/?u=https%3A%2F%2Fwww.australia.com%2Fcontent%2Fdam%2Fassets%2Fimage%2Fjpeg%2F8%2Fb%2Fg%2FSTO-QLD-102198.jpg&f=1&nofb=1&ipt=67be86ab4768b8c10500571b45006cdb45006c705fbb167bedd042c9ec17faaa&ipo=images')", backgroundSize: "cover" }}>
+          {showMap ? (
+            <Map center={[latitude, longitude]} zoom={12} width={600} height={400}>
+              <Marker anchor={[latitude, longitude]} />
+            </Map>
+          ) : (
+            <button className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded" onClick={fetchData}>Find Restaurant</button>
+          )}
         </div>
-    );
-};
+      );
+    };
 
-export default Finder;
+    export default Finder;
+
