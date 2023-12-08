@@ -62,7 +62,13 @@
           }
         });
       }
-
+      function backToMenu() {
+        setShowMap(false);
+      }
+      function newRestaurant() {
+        const randomIndex = Math.floor(Math.random() * restaurants.businesses.length);
+        setRandominess(randomIndex);
+      }
       return (
         <div style={{ backgroundImage: "url('https://external-content.duckduckgo.com/iu/?u=https%3A%2F%2Fwww.australia.com%2Fcontent%2Fdam%2Fassets%2Fimage%2Fjpeg%2F8%2Fb%2Fg%2FSTO-QLD-102198.jpg&f=1&nofb=1&ipt=67be86ab4768b8c10500571b45006cdb45006c705fbb167bedd042c9ec17faaa&ipo=images')", backgroundSize: "cover" }}>
           
@@ -78,6 +84,10 @@
   <>
     {showMap ? (
   <div className="flex flex-col items-center justify-center h-screen">
+  <div className="flex space-x-4">
+    <button className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-l" onClick={backToMenu}>Back to Menu</button>
+    <button className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-r" onClick={newRestaurant}>New Restaurant</button>
+  </div>
    <Map 
   center={[restaurants.businesses[randominess].coordinates.latitude, restaurants.businesses[randominess].coordinates.longitude]} 
   zoom={17} 
@@ -107,7 +117,7 @@
   </div>
 ) : (
       <div className="flex items-center justify-center h-screen">
-      <button className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-l" onClick={fetchData}>Find Restaurant</button>
+      <button className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded" onClick={fetchData}>Find Restaurant</button>
       </div>
     )}
   </>
