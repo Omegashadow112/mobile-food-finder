@@ -1,13 +1,12 @@
     import React, { useState } from 'react';
     import axios from 'axios';
     import { Map, Marker } from "pigeon-maps" 
-    import response from './response.json';
     import StarRatings from 'react-star-ratings';
     const Finder = () => {
       const [latitude, setLatitude] = useState(-27.465);
       const [longitude, setLongitude] = useState(153.023);
       const [showMap, setShowMap] = useState(false);
-
+      const [radius, setRadius] = useState(500);
       const [errorMessage, setErrorMessage] = useState(null);
       const [restaurants, setRestaurants] = useState([]);
       const [loading, setLoading] = useState(false);
@@ -17,29 +16,52 @@
         const term = prompt("What type of food do you want to eat?");
         return term;
       }
-      async function fetchData() {
+      async function fetchData(PostCodeOn) {
         try {
           const userTerm = await askUserForterm();
           setTerm(userTerm);
           setLoading(true);
+          
+          if(PostCodeOn) {
+
+            const latlon = await getGeoCodeFromPostCode();
+            console.log(latlon);
+            setLatitude(latlon[0].lat);
+            setLongitude(latlon[0].lon);
+          } else {
           const { latitude: userLatitude, longitude: userLongitude } = await getUserLocation();
           setLatitude(userLatitude);
           setLongitude(userLongitude);
+          }
+          
           setShowMap(true);
       
-          const res = await axios.get(`https://worker-odd-snow-b170.danielheinrichemail.workers.dev/?term=${userTerm}&radius=2500&latitude=${userLatitude}&longitude=${userLongitude}&sort_by=distance&limit=50`);
+          const res = await axios.get(`https://worker-odd-snow-b170.danielheinrichemail.workers.dev/?term=${userTerm}&radius=${radius}&latitude=${latitude}&longitude=${longitude}&sort_by=distance&limit=50`);
+          if (res.data.businesses.length === 0) {
+            setLoading(false);
+            setErrorMessage("No results found");
+          return;
+          }
           setRestaurants(res.data);
-      
+
           const randomIndex = Math.floor(Math.random() * res.data.businesses.length);
           setRandominess(randomIndex);
-      
+
           setLoading(false);
         } catch (error) {
           setLoading(false);
           setErrorMessage(error.message);
         }
       }
-      
+      async function getGeoCodeFromPostCode() {
+        const postCode = prompt("What's your post code?");
+        const res = await axios.get(`https://geocode.maps.co/search?q=${postCode}`);
+        let australianCities = res.data.filter(place => place.display_name.includes('Australia'));
+
+        let latLon = australianCities.map(city => ({lat: city.lat, lon: city.lon}));
+
+        return latLon;
+      }
       function getUserLocation() {
         return new Promise((resolve, reject) => {
           if (navigator.geolocation) {
@@ -65,6 +87,10 @@
       function backToMenu() {
         setShowMap(false);
       }
+      function backToMenuError() {
+        setErrorMessage(null);
+        setShowMap(false);
+      }
       function newRestaurant() {
         const randomIndex = Math.floor(Math.random() * restaurants.businesses.length);
         setRandominess(randomIndex);
@@ -78,7 +104,9 @@
   </div>
 ) : errorMessage ? (
   <div className="flex items-center justify-center h-screen">
-  <div className="bg-red-500 hover text-white font-bold py-2 px-4 ">{errorMessage}</div>
+  <div className="bg-red-500 hover text-white font-bold py-2 px-4 ">{errorMessage}
+  </div>
+  <button className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-r" onClick={backToMenuError}>Back to Menu</button>
   </div>
 ) : (
   <>
@@ -106,7 +134,7 @@
   starSpacing="5px"
   starRatedColor="yellow" // Makes the stars yellow
 />
-<h2><a className="text-blue-500 hover:text-blue-700" href={`https://maps.google.com/?q=${restaurants.businesses[randominess].name}`}>{restaurants.businesses[randominess].location.display_address.join(' ')}</a></h2>
+<h2><a className="text-blue-500 hover:text-blue-700" href={`https://maps.google.com/?q=${restaurants.businesses[randominess].name} ${restaurants.businesses[randominess].location.display_address.join(' ')}`}>{restaurants.businesses[randominess].location.display_address.join(' ')}</a></h2>
 <h2>Price: {restaurants.businesses[randominess].price || '$'}</h2>
 <h2>{restaurants.businesses[randominess].categories[0].title}</h2>
 </div>
@@ -117,7 +145,13 @@
   </div>
 ) : (
       <div className="flex items-center justify-center h-screen">
-      <button className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded" onClick={fetchData}>Find Restaurant</button>
+      <button className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-l" onClick={() => fetchData(false)}>Find Restaurant</button>
+      <button className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 " onClick={() => fetchData(true)}>Post Code</button>
+      <select className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-r" onChange={(e) => setRadius(e.target.value)}>
+        {[...Array(10).keys()].map(i => 
+          <option key={i} value={(i+1)*500}>{(i+1)*500}</option>
+        )}
+      </select>
       </div>
     )}
   </>
