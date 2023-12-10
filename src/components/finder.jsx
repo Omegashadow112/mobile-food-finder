@@ -21,22 +21,23 @@
           const userTerm = await askUserForterm();
           setTerm(userTerm);
           setLoading(true);
-          
+          let userLatitude = 0;
+          let userLongitude = 0;
           if(PostCodeOn) {
 
             const latlon = await getGeoCodeFromPostCode();
             console.log(latlon);
-            setLatitude(latlon[0].lat);
-            setLongitude(latlon[0].lon);
+            userLatitude = latlon[0].lat;
+            userLongitude = latlon[0].lon;
           } else {
-          const { latitude: userLatitude, longitude: userLongitude } = await getUserLocation();
-          setLatitude(userLatitude);
-          setLongitude(userLongitude);
+          const { latitude: UserLatitude, longitude: UserLongitude } = await getUserLocation();
+          userLatitude = UserLatitude;
+          userLongitude = UserLongitude;
           }
           
           setShowMap(true);
       
-          const res = await axios.get(`https://worker-odd-snow-b170.danielheinrichemail.workers.dev/?term=${userTerm}&radius=${radius}&latitude=${latitude}&longitude=${longitude}&sort_by=distance&limit=50`);
+          const res = await axios.get(`https://worker-odd-snow-b170.danielheinrichemail.workers.dev/?term=${userTerm}&radius=${radius}&latitude=${userLatitude}&longitude=${userLongitude}&sort_by=distance&limit=50`);
           if (res.data.businesses.length === 0) {
             setLoading(false);
             setErrorMessage("No results found");
